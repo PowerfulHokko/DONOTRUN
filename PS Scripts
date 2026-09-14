@@ -1,0 +1,14 @@
+$filter = "(&(objectCategory=person)(objectClass=user)(servicePrincipalName=*)" + `
+          "(!userAccountControl:1.2.840.113556.1.4.803:=2)" + `
+          "(!objectClass=msDS-GroupManagedServiceAccount)" + `
+          "(!objectClass=msDS-ManagedServiceAccount))"
+
+$searcher = [ADSISearcher]$filter
+$searcher.PageSize = 1000
+
+$searcher.FindAll() | ForEach-Object {
+    [PSCustomObject]@{
+        SamAccountName = $_.Properties.samaccountname[0]
+        SPN            = $_.Properties.serviceprincipalname -join ', '
+    }
+}
