@@ -83,3 +83,27 @@ foreach ($result in $results) {
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
+1..245 | ForEach-Object {
+     $ip = "10.193.251.$_"
+     if(Test-Connection -ComputerName $ip -Count 1 -Quiet){
+         Write-Host "[$ip alive]" -ForegroundColor Green
+
+         ##Test further connections
+         $ports = @(80, 443, 88, 445, 135, 8000, 8080, 5060, 9000, 21, 22, 23, 53, 389, 636, 1433, 3306, 3389)
+         $ports | ForEach-Object {
+             if(Test-NetConnection -Port $_ -ComputerName $ip -InformationLevel Quiet){
+                 Write-Host "Port $_ open" -ForegroundColor Magenta
+             }
+         }
+     }
+ }
