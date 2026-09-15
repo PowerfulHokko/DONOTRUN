@@ -144,3 +144,15 @@ function Test-NetworkPortScan {
         }
     }
 }
+
+
+
+
+# Read the list of computers
+$computers = Get-Content "C:\Path\To\Computers.txt"
+# Loop through each computer and test connectivity
+foreach ($computer in $computers) {
+    if (Test-Connection -ComputerName $computer -Count 1 -ErrorAction SilentlyContinue) {
+        Write-Host "$computer" -ForegroundColor Green
+    }
+}
