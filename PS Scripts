@@ -136,6 +136,10 @@ function Test-NetworkPortScan {
                 foreach ($port in $Ports) {
                     if (Test-NetConnection -Port $port -ComputerName $computer -InformationLevel Quiet) {
                         Write-Host "  -> Port $port open" -ForegroundColor Magenta
+
+                        if($port -eq 445){
+                            Get-CimInstance -ClassName Win32_Share -ComputerName $computer
+                        }
                     }
                 }
             } else {
