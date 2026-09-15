@@ -107,3 +107,40 @@ foreach ($result in $results) {
          }
      }
  }
+
+
+
+
+
+
+
+
+function Test-NetworkPortScan {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]
+        [Alias('IPAddress', 'Host')]
+        [string[]]$ComputerName,
+
+        [Parameter(Mandatory=$false)]
+        [int[]]$Ports = @(80, 443, 88, 445, 135, 8000, 8080, 5060, 9000, 21, 22, 23, 53, 389, 636, 1433, 3306, 3389)
+    )
+
+    process {
+        foreach ($computer in $ComputerName) {
+            # Test if the host is reachable
+            if (Test-Connection -ComputerName $computer -Count 1 -Quiet) {
+                Write-Host "[$computer alive]" -ForegroundColor Green
+
+                # Test specified ports
+                foreach ($port in $Ports) {
+                    if (Test-NetConnection -Port $port -ComputerName $computer -InformationLevel Quiet) {
+                        Write-Host "  -> Port $port open" -ForegroundColor Magenta
+                    }
+                }
+            } else {
+                Write-Host "[$computer is offline or unreachable]" -ForegroundColor DarkGray
+            }
+        }
+    }
+}
