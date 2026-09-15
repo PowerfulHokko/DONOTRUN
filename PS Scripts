@@ -146,6 +146,9 @@ function Test-NetworkPortScan {
 }
 
 
+$searcher = [adsisearcher]"(&(objectCategory=computer))"
+$searcher.PageSize = 1000
+($searcher.FindAll()).Properties.name -join ','
 
 
 # Read the list of computers
